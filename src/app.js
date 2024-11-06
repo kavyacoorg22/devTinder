@@ -1,28 +1,42 @@
 const express=require("express");
+const connectDB=require('./config/database.js');
+const User=require("./modules/user.js");
 const app=express();
 
+app.post('/signup',async(req,res)=>{
+  const user=new User(
+    {
+      firstName:"kavya",
+      lastName:"praba",
+      emailId:"kavya@gmail.com",
+      password:"kavya@123"
 
-
-app.use("/admin",(req,res,next)=>
-{
-  console.log("middleware is checked");
-  const token="xyz";
-  const isAuthorized=token==="xyz";
-  if(!isAuthorized)
-  {
-    res.send("UnAuthorized");
-  }
-  else{
-    next();
-  }
-});
-  app.use("/admin/userdata",(req,res,next)=>
-  {
-    res.send("user data");
-  })
-    
-app.use("/admin/deleteuser",(req,res,next)=>{
-  res.send("user data deleted");
- 
+    });
+    try{
+    user.save();
+    res.send("data saved successfully")
+    }catch(err)
+    {
+      res.status(400).send("Something went wrong");
+    }
 })
-app.listen(7777,()=>console.log("server is running on 7777 port"))
+
+
+
+
+connectDB()
+.then(()=>{
+  console.log("Database connected succesfully");
+   app.listen(7777,()=>console.log("server is running on 7777 port"));
+}
+)
+.catch(()=>
+   console.log("Database is not connected")
+ )
+
+
+
+
+
+
+
