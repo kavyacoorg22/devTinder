@@ -1,18 +1,33 @@
 const express=require("express");
 const connectDB=require('./config/database.js');
 const User=require("./modules/user.js");
+const validateSignUpData=require("./util/validation.js")
+const bcrypt=require('bcrypt')
 const app=express();
 
 app.use(express.json());
 
 app.post('/signup',async(req,res)=>{
-  const user=new User(req.body);
-    try{
-   await  user.save();
+  
+  try{
+  // whatever the request come validate the request
+  // it is a helper function this function is created inside autil folder 
+  // all the validations are performed in that field so code will look clean
+    validateSignUpData(req);
+  //we have write like this otherwise all the data will came  
+    const  {firstName,lastName,emailId, password}=req.body;
+  //encrypt the password
+    const passwordHash=await bcrypt.hash(password,10);// 10 means salting
+    console.log(passwordHash);
+
+    const user=new User({firstName,lastName,emailId,password:passwordHash});
+     await  user.save();
     res.send("data saved successfully");
-    }catch(err)
+    }
+    
+    catch(err)
     {
-      res.status(400).send("Something went wrong"+err.message);
+      res.status(400).send("ERROR:"+err.message);
     }
 })
 
