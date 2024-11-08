@@ -2,10 +2,13 @@ const express=require("express");
 const connectDB=require('./config/database.js');
 const User=require("./modules/user.js");
 const validateSignUpData=require("./util/validation.js")
-const bcrypt=require('bcrypt')
+const bcrypt=require('bcrypt');
+const cookieParser=require('cookie-parser');
 const app=express();
+const jwt=require("jsonwebtoken");
 
 app.use(express.json());
+app.use(cookieParser());
 
 app.post('/signup',async(req,res)=>{
   
@@ -29,6 +32,68 @@ app.post('/signup',async(req,res)=>{
     {
       res.status(400).send("ERROR:"+err.message);
     }
+})
+app.post('/login',async(req,res)=>
+{
+  try{
+     const {emailId,password}=req.body;
+     const user=await User.findOne({emailId:emailId});
+     if(!user)
+     {
+      throw new Error('Invalid crediential');
+     }
+
+     const isPasswordValid=await bcrypt.compare(password,user.password);
+
+     if(isPasswordValid){
+
+      //create a JWT token first parameter that hides the id of the user
+      // second is secret key
+      const token=await jwt.sign({_id:user._id},"KAVYA@23");
+      console.log(token);
+
+      //add token to cookie and send response back to user
+      res.cookie("token",token)
+      res.send("Login succesful");
+     }
+    else{
+      throw new Error("invalid creadiential");
+    }
+}
+  catch(err){
+    res.status(400).send("Error"+err.message);
+  }
+})
+  
+app.get('/profile',async (req,res)=>
+{
+  try{
+  const cookies=req.cookies;
+
+   const {token}=cookies;
+   if(!token)
+   {
+    throw new Error('invalid token');
+   }
+    //validate cookies
+   const decodedMessage=await jwt.verify(token,"KAVYA@23")
+   const {_id}=decodedMessage;
+
+   console.log("Logged in user is:"+_id);
+
+   const user=await User.findById(_id);
+   if(!user)
+   {
+    throw new Error("User not found");
+   }
+
+   res.send(user);
+  }
+  catch(err)
+  {
+    res.status(400).send('Error'+err.message);
+  }
+  
 })
 
 app.get('/user',async(req,res)=>{
